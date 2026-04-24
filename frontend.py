@@ -3,6 +3,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime, date, timedelta
 import re
+import requests
 app = Flask(__name__)
 
 # In-memory data storage
@@ -10,21 +11,23 @@ app = Flask(__name__)
 tasks = [
     {"id": 1, "group": "CS 101", "title": "Read Chapter 3","due": "2025-04-21","priority": 2},
     {"id": 2,"group": "Life","title": "Do laundry","due": "2025-04-22","priority": 3} ]
-PASTEL_COLORS = [
-    "#F9B7C9", 
-    "#B8F2D8",
-    "#FFE0C7",
-    "#C9C5FF",
-    "#B8F0F2",
-    "#E3B8F5",
-]
+BACKEND_URL = "http://127.0.0.1:5001"
+PASTEL_COLORS = ["#F9B7C9", "#B8F2D8","#FFE0C7","#C9C5FF","#B8F0F2","#E3B8F5",]
 
 @app.route("/")
 @app.route("/home")
 def home():
-    # sort by priority (lower number = higher priority)
-    sorted_tasks = sorted(tasks, key=lambda t: t["priority"])
-    grouped = group_tasks(sorted_tasks)
+    try:
+        resp = requests.get(f"{BACKEND_URL}/api/tasks", timeout=3)
+        resp.raise_for_status()
+        all_tasks = resp.json()
+    except Exception:
+        return render_template("error.html")
+
+    MAX_ITEMS = 20
+    limited_tasks = all_tasks[:MAX_ITEMS]
+
+    grouped = group_tasks(limited_tasks)
     return render_template("index.html", grouped_tasks=grouped)
 
 
@@ -71,14 +74,28 @@ def new_task():
                 priority=priority_raw
             )
 
-        new_id = len(tasks) + 1
-        tasks.append({
-            "id": new_id,
+        payload = {
             "group": group,
             "title": title,
             "due": due,
-            "priority": priority
-        })
+            "priority": str(priority),
+
+        try:
+            resp = requests.post(f"{BACKEND_URL}/api/tasks", json=payload, timeout=3)
+            if resp.status_code >= 400:
+                data = resp.json()
+                backend_errors = data.get("errors", ["Backend validation failed."])
+                return render_template(
+                    "new_task.html",
+                    errors=backend_errors,
+                    group=group,
+                    title=title,
+                    due=due,
+                    priority=priority_raw,
+                )
+        except Exception:
+            return render_template("error.html")
+
         return redirect(url_for("home"))
 
     return render_template("new_task.html", errors=None)
@@ -113,19 +130,19 @@ def group_tasks(tasks):
     for i, name in enumerate(group_names):
         color = PASTEL_COLORS[i % len(PASTEL_COLORS)]
         colored_groups[name] = {
-            "color": color,
-            "tasks": grouped[name]
+            "color": color, "tasks": grouped[name]
         }
     return colored_groups
 
 @app.route("/tasks/delete/<int:task_id>", methods=["POST"])
 def delete_task(task_id):
-    for t in tasks:
-        if t["id"] == task_id:
-            tasks.remove(t)
-            break
+    try:
+        resp = requests.delete(f"{BACKEND_URL}/api/tasks/{task_id}", timeout=3)
+        resp.raise_for_status()
+    except Exception:
+        return render_template("error.html")
     return redirect(url_for("home"))
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
