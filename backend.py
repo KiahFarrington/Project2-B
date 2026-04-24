@@ -2,56 +2,10 @@
 #backend.py -- pulled from source code
 from flask import Flask, request, jsonify
 import sqlite3
+import re
 from datetime import datetime, timedelta, date
 import json
 
-def validate_due_date(due_str):
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", due_str):
-        return False, "Due date must be in YYYY-MM-DD format."
-    try:
-        dt = datetime.strptime(due_str, "%Y-%m-%d").date()
-    except ValueError:
-        return False, "Due date is not a valid calendar date."
-    min_date = date(2024, 1, 1)
-    max_date = date.today() + timedelta(days=365 * 5)
-    if dt < min_date:
-        return False, "Due date cannot be earlier than 2024."
-    if dt > max_date:
-        return False, "Due date must be within 5 years from today."
-    return True, ""
-
-def validate_task_payload(data):
-    errors = []
-
-    group = (data.get("group") or "").strip()
-    title = (data.get("title") or "").strip()
-    due = (data.get("due") or "").strip()
-    priority_raw = (data.get("priority") or "").strip()
-
-    if not group or len(group) > 50:
-        errors.append("Group is required and must be less than 50 characters.")
-    if not title or len(title) > 100:
-        errors.append("Task title is required and must be less than 100 characters.")
-
-    if not due:
-        errors.append("Due date is required.")
-    else:
-        ok, msg = validate_due_date(due)
-        if not ok:
-            errors.append(msg)
-
-    priority = None
-    if not priority_raw:
-        errors.append("Priority is required.")
-    else:
-        try:
-            priority = int(priority_raw)
-            if priority < 1 or priority > 4:
-                errors.append("Priority must be an integer between 1 and 4.")
-        except ValueError:
-            errors.append("Priority must be an integer.")
-
-    return errors, group, title, due, priority
 backend_app = Flask(__name__)
 DB_NAME = "tasks.db"
 

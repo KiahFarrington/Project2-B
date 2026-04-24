@@ -6,8 +6,6 @@ import re
 import requests
 app = Flask(__name__)
 
-# In-memory data storage
-# Each task has: id, group, title, due, priority
 BACKEND_URL = "http://127.0.0.1:5001"
 PASTEL_COLORS = ["#F9B7C9", "#B8F2D8","#FFE0C7","#C9C5FF","#B8F0F2","#E3B8F5",]
 
@@ -75,7 +73,7 @@ def new_task():
             "group": group,
             "title": title,
             "due": due,
-            "priority": str(priority),
+            "priority": str(priority)
         }
 
         try:
