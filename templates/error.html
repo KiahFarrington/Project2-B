@@ -1,0 +1,9 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="alert alert-danger">
+    <strong>Error:</strong> Something went wrong.
+</div>
+<a href="{{ url_for('home') }}" class="btn btn-primary">Back to Home</a>
+{% endblock %}
