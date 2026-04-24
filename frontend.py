@@ -8,9 +8,6 @@ app = Flask(__name__)
 
 # In-memory data storage
 # Each task has: id, group, title, due, priority
-tasks = [
-    {"id": 1, "group": "CS 101", "title": "Read Chapter 3","due": "2025-04-21","priority": 2},
-    {"id": 2,"group": "Life","title": "Do laundry","due": "2025-04-22","priority": 3} ]
 BACKEND_URL = "http://127.0.0.1:5001"
 PASTEL_COLORS = ["#F9B7C9", "#B8F2D8","#FFE0C7","#C9C5FF","#B8F0F2","#E3B8F5",]
 
@@ -79,6 +76,7 @@ def new_task():
             "title": title,
             "due": due,
             "priority": str(priority),
+        }
 
         try:
             resp = requests.post(f"{BACKEND_URL}/api/tasks", json=payload, timeout=3)
