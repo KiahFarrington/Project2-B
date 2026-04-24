@@ -25,6 +25,19 @@ def home():
     grouped = group_tasks(limited_tasks)
     return render_template("index.html", grouped_tasks=grouped)
 
+@app.route("/table")
+def table_view():
+    try:
+        resp = requests.get(f"{BACKEND_URL}/api/tasks", timeout=3)
+        resp.raise_for_status()
+        all_tasks = resp.json()
+    except Exception:
+        return render_template("error.html")
+
+    MAX_ITEMS = 20
+    limited_tasks = all_tasks[:MAX_ITEMS]
+
+    return render_template("table_view.html", tasks=limited_tasks)
 
 @app.route("/new_task", methods=["GET", "POST"])
 def new_task():
